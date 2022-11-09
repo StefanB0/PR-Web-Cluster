@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	REFRESH = time.Second * 30
+	REFRESH = time.Second * 5
 )
 
 type Cluster struct {
@@ -39,9 +39,11 @@ func (s *WebServer) periodicSync() {
 	defer s.wg.Done()
 	for s.serverAlive {
 		time.Sleep(REFRESH)
+		log.Println("Flag1")
 		for _, reff := range s.cluster.serverSet {
-			s.syncRequest(reff.address)
+			s.syncRequest("http://127.0.0.1" + reff.address + "/sync")
 		}
+		log.Println("It just works")
 	}
 }
 
@@ -55,5 +57,9 @@ func (s *WebServer) syncRequest(address string) {
 	if err != nil {
 		log.Printf("server: error making http request: %s\n", err)
 	}
-	http.DefaultClient.Do(req)
+
+	_, err = http.DefaultClient.Do(req)
+	if err != nil {
+		log.Printf("server: error sending new request: %s\n", err)
+	}
 }

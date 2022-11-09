@@ -1,0 +1,22 @@
+version: '2.10.2'
+services:
+  leader:
+    container_name: leader
+    image: web-cluster-image
+    ports: 
+      - "3042:3042"
+  minion1:
+    container_name: minion1
+    image: web-cluster-image
+    ports: 
+      - "3043:3043"
+    depends_on:
+      - leader
+  minion2:
+    container_name: minion2
+    image: web-cluster-image
+    ports: 
+      - "3043:3043"
+    depends_on:
+      - leader
+    command: [ "/docker-web-cluster", "-address=2"]

@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1
 FROM golang:1.19-alpine
 
-ARG port
-ARG main
-ARG leader
+ARG port=0
+ARG main=0
+ARG leader=false
 
 WORKDIR /app
 
