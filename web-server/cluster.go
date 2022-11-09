@@ -1,9 +1,15 @@
 package webserver
 
-import "time"
+import (
+	"bytes"
+	"encoding/json"
+	"log"
+	"net/http"
+	"time"
+)
 
 const (
-	RUNSPEED = time.Second * 30
+	REFRESH = time.Second * 30
 )
 
 type Cluster struct {
@@ -32,11 +38,22 @@ func (c *Cluster) AddToCluster(reff ServerRefference) {
 func (s *WebServer) periodicSync() {
 	defer s.wg.Done()
 	for s.serverAlive {
-		time.Sleep(RUNSPEED)
+		time.Sleep(REFRESH)
 		for _, reff := range s.cluster.serverSet {
 			s.syncRequest(reff.address)
 		}
 	}
 }
 
-func (s *WebServer) syncRequest(address string) //TODO
+func (s *WebServer) syncRequest(address string) {
+	body, err := json.Marshal(s.memory)
+	if err != nil {
+		log.Printf("server: error making json copy of database: %s\n", err)
+	}
+	bodyReader := bytes.NewReader(body)
+	req, err := http.NewRequest(http.MethodPut, address, bodyReader)
+	if err != nil {
+		log.Printf("server: error making http request: %s\n", err)
+	}
+	http.DefaultClient.Do(req)
+}

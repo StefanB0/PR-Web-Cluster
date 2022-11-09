@@ -26,7 +26,10 @@ func (s *WebServer) createElement(w http.ResponseWriter, r *http.Request) {
 	s.memory.Create(p)
 }
 
-func (s *WebServer) readElement(w http.ResponseWriter, r *http.Request) {}
+func (s *WebServer) readElement(w http.ResponseWriter, r *http.Request) {
+	reqKey := r.Header.Get("Key")
+	w.Write(s.memory.Read(reqKey))
+}
 
 func (s *WebServer) updateElement(w http.ResponseWriter, r *http.Request) {
 	reqBody, err := ioutil.ReadAll(r.Body)

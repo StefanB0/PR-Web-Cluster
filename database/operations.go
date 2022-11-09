@@ -15,3 +15,9 @@ func (d *DatabaseInstance) Update(pair Pair) {
 func (d *DatabaseInstance) Delete(key string) {
 	delete(d.memory, key)
 }
+
+func (d *DatabaseInstance) OverwriteMemory(DBMemory map[string][]byte) {
+	for key, element := range DBMemory {
+		d.memory[key] = element
+	}
+}
