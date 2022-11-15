@@ -3,6 +3,7 @@ package webserver
 import (
 	"bytes"
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
@@ -18,14 +19,14 @@ type Cluster struct {
 }
 
 type ServerRefference struct {
+	id      int
 	address string
-	version uint64
 }
 
 func NewCluster(_name string, addressSet []string) Cluster {
 	_serverSet := make([]ServerRefference, len(addressSet))
 	for i, _address := range addressSet {
-		_serverSet[i] = ServerRefference{address: _address, version: 0}
+		_serverSet[i] = ServerRefference{address: _address}
 	}
 	cluster := Cluster{name: _name, serverSet: _serverSet}
 	return cluster
@@ -47,11 +48,33 @@ func (s *WebServer) periodicSync() {
 	}
 }
 
+func (s *WebServer) clusterSync(address string) {
+	body, err := json.Marshal(ServerRefference{id: s.id, address: s.address})
+	if err != nil {
+		log.Printf("server: error making json copy of custom struct id + address: %s\n", err)
+	}
+
+	bodyReader := bytes.NewReader(body)
+
+	resp, err := http.DefaultClient.Post(address+"/contact", "struct", bodyReader)
+	respBody, err := ioutil.ReadAll(resp.Body)
+	
+	var nCluster Cluster
+	json.Unmarshal(respBody, &nCluster)
+	s.cluster = nCluster
+	
+	err = resp.Body.Close()
+	if err != nil {
+		log.Printf("server: error closing response body: %s\n", err)
+	}
+}
+
 func (s *WebServer) syncRequest(address string) {
 	body, err := json.Marshal(s.memory)
 	if err != nil {
 		log.Printf("server: error making json copy of database: %s\n", err)
 	}
+
 	bodyReader := bytes.NewReader(body)
 	req, err := http.NewRequest(http.MethodPut, address, bodyReader)
 	if err != nil {

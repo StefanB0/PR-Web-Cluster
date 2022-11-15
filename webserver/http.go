@@ -66,3 +66,18 @@ func (s *WebServer) overwriteMemory(w http.ResponseWriter, r *http.Request) {
 
 	s.memory.OverwriteMemory(db)
 }
+
+func (s *WebServer) resolveContact(w http.ResponseWriter, r *http.Request) {
+	reqBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Server could not read request body: %s\n", err)
+	}
+
+	var tuple ServerRefference
+	json.Unmarshal(reqBody, &tuple)
+
+	s.cluster.AddToCluster(tuple)
+
+	respBody, err := json.Marshal(s.cluster)
+	w.Write(respBody)
+}

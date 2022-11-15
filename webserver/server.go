@@ -9,11 +9,15 @@ import (
 	"sync"
 )
 
-type WebServer struct {
-	http.Server
-	serverAlive bool
+const (
+	VIRTUAL_PORT     = ":3000"
+	ADDRESS_TEMPLATE = "http:minion"
+)
 
-	port string
+type WebServer struct {
+	id      int
+	address string
+	port    string
 
 	isLeader      bool
 	leaderAddress string
@@ -21,16 +25,18 @@ type WebServer struct {
 	cluster Cluster
 	memory  database.DatabaseInstance
 	wg      sync.WaitGroup
+
+	http.Server
+	serverAlive bool
 }
 
-func NewWebServer(_port string, _leaderAddress string, _isLeader bool, _cluster Cluster) *WebServer {
+func NewWebServer(_id int, _address string, _port string) *WebServer {
 	return &WebServer{
-		serverAlive:   true,
-		port:          _port,
-		leaderAddress: _leaderAddress,
-		isLeader:      _isLeader,
-		cluster:       _cluster,
-		memory:        database.NewDatabase(),
+		id:          _id,
+		address:     _address,
+		port:        _port,
+		serverAlive: true,
+		memory:      database.NewDatabase(),
 	}
 }
 
@@ -43,6 +49,8 @@ func (s *WebServer) StartServer() {
 	if s.isLeader {
 		s.wg.Add(1)
 		go s.periodicSync()
+	} else {
+		s.clusterSync(s.leaderAddress)
 	}
 
 	s.wg.Wait()
@@ -55,6 +63,7 @@ func (s *WebServer) initHandlers() {
 	http.HandleFunc("/update", s.updateElement)
 	http.HandleFunc("/delete", s.deleteElement)
 	http.HandleFunc("/sync", s.overwriteMemory)
+	http.HandleFunc("/contact", s.resolveContact)
 }
 
 func (s *WebServer) initListen() {
@@ -66,4 +75,13 @@ func (s *WebServer) initListen() {
 		log.Printf("error starting server %s\n", err)
 		os.Exit(1)
 	}
+}
+
+func (s *WebServer) SetLeader(address string, _isLeader bool) {
+	s.leaderAddress = address
+	s.isLeader = _isLeader
+}
+
+func (s *WebServer) SetCluster(_cluster Cluster) {
+	s.cluster = _cluster
 }

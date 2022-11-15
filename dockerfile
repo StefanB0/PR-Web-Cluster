@@ -1,9 +1,11 @@
 # syntax=docker/dockerfile:1
 FROM golang:1.19-alpine
 
-ARG port=0
-ARG main=0
-ARG leader=false
+ARG id=0
+ARG address="http:minion""
+ARG port=":3000"
+ARG leader="http:leader0:3000"
+ARG isLeader=false
 
 WORKDIR /app
 
@@ -19,6 +21,6 @@ COPY *.go ./
 
 RUN go build -o /docker-web-cluster
 
-EXPOSE 8881
+EXPOSE 3000
 
-CMD [ "/docker-web-cluster", "-address=${port}", "-mainAddress=${main}", "-leader=${leader}" ]
+CMD [ "/docker-web-cluster", "-id:${id}", "-address=${address}", "-port=${port}", "-leader=${leader}", "-isLeader=${isLeader}" ]

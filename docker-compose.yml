@@ -1,22 +1,24 @@
 version: '2.10.2'
 services:
-  leader:
-    container_name: leader
+  leader0:
+    container_name: leader0
     image: web-cluster-image
     ports: 
-      - "3042:3042"
+      - "8083:3000"
+    command: [ "/docker-web-cluster", "-address=http:leader", "-isLeader=true"]
   minion1:
     container_name: minion1
     image: web-cluster-image
     ports: 
-      - "3043:3043"
+      - "8082:3000"
     depends_on:
       - leader
+    command: [ "/docker-web-cluster", "-id=1"]
   minion2:
     container_name: minion2
     image: web-cluster-image
     ports: 
-      - "3043:3043"
+      - "8081:3000"
     depends_on:
       - leader
-    command: [ "/docker-web-cluster", "-address=2"]
+    command: [ "/docker-web-cluster", "-id=2"]

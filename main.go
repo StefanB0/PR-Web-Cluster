@@ -1,22 +1,25 @@
 package main
 
 import (
-	webserver "PR/Web_Cluster/web-server"
+	"PR/Web_Cluster/webserver"
 	"flag"
-)
-
-var (
-	addressSet = [3]string{":3042", ":3043", ":3044"}
+	"fmt"
 )
 
 func main() {
-	addressPtr := flag.Int("address", 0, "chooses one of the predifined ports")
-	mainAddressPtr := flag.Int("mainAddress", 0, "chooses cluster leader from predefined ports")
-	leaderPtr := flag.String("leader", "false", "determines if the server is cluster leader")
+	idPtr := flag.Int("id", 0, "server id")
+	addressPtr := flag.String("address", "http:minion", "server address")
+	portPtr := flag.String("port", ":3000", "chooses one of the predifined ports")
+	leaderPtr := flag.String("leader", "http:leader0:3000", "cluster leader address")
+	isLeaderPtr := flag.Bool("isLeader", false, "defines if server is cluster leader at creation")
 	flag.Parse()
 
+	addressSet := []string{fmt.Sprint(*addressPtr, *idPtr, *portPtr)}
 	cluster := webserver.NewCluster("Hivemind", addressSet[:])
-	server := webserver.NewWebServer(addressSet[*addressPtr], addressSet[*mainAddressPtr], *leaderPtr=="true", cluster)
+	server := webserver.NewWebServer(*idPtr, *addressPtr, *portPtr)
+	server.SetLeader(*leaderPtr, *isLeaderPtr)
+	server.SetCluster(cluster)
+
 	server.StartServer()
 }
 
