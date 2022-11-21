@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	REFRESH = time.Second * 10
+	REFRESH = time.Second * 4
 )
 
 type WebServer struct {
@@ -38,12 +38,7 @@ func NewWebServer(_id int, _address string, _port string, _network []string) *We
 }
 
 func (s *WebServer) StartServer() {
-
-	if s.isLeader {
-		s.memory.Create("Example", []byte("12345"))
-		go s.periodicSync()
-	}
-
+	s.network = pruneSlice(s.network, s.addressSelf)
 	go s.serverRun()
 	s.initHandlers()
 	s.initListen()
@@ -62,15 +57,15 @@ func (s *WebServer) initListen() {
 }
 
 func (s *WebServer) serverRun() {
-	if s.isLeader {
-		s.memory.Create("Hello", []byte("World"))
-		time.Sleep(1)
-	}
+	// if s.isLeader {
+	// 	s.memory.Create("Hello", []byte("World"))
+	// 	time.Sleep(1)
+	// }
 
 	for s.serverAlive {
-		if s.isLeader {
-			s.periodicSync()
-		}
+		// if s.isLeader {
+		// 	s.periodicSync()
+		// }
 		log.Printf("%s: internal memory: %+v", s.addressSelf, s.memory)
 		time.Sleep(REFRESH)
 	}
@@ -78,9 +73,6 @@ func (s *WebServer) serverRun() {
 
 func (s *WebServer) periodicSync() {
 	for _, address := range s.network {
-		if address == s.addressSelf {
-			continue
-		}
 		keys, values := s.memory.GetKeyValuePairs()
 		s.overwriteRequest(address, keys, values)
 	}

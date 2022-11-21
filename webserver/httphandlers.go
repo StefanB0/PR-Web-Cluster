@@ -2,6 +2,7 @@ package webserver
 
 import (
 	"PR/Web_Cluster/database"
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -15,6 +16,7 @@ func (s *WebServer) initHandlers() {
 	http.HandleFunc("/read", s.readElement)
 	http.HandleFunc("/update", s.updateElement)
 	http.HandleFunc("/delete", s.deleteElement)
+	http.HandleFunc("/kill", s.kill)
 	http.HandleFunc("/overwrite", s.overwriteMemory)
 	http.HandleFunc("/handshake", s.handshake)
 }
@@ -27,12 +29,16 @@ func (s *WebServer) createElement(w http.ResponseWriter, r *http.Request) {
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("Server could not read request body: %s\n", err)
+		return
 	}
 
 	var p database.Pair
 	json.Unmarshal(reqBody, &p)
-
 	s.memory.Create(p.Key, p.Value)
+
+	if r.Header.Get("Forward") != "true" {
+		s.forwardRequest(r, reqBody, "/create")
+	}
 }
 
 func (s *WebServer) readElement(w http.ResponseWriter, r *http.Request) {
@@ -50,6 +56,10 @@ func (s *WebServer) updateElement(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal(reqBody, &p)
 
 	s.memory.Update(p.Key, p.Value)
+
+	if r.Header.Get("Forward") != "true" {
+		s.forwardRequest(r, reqBody, "/update")
+	}
 }
 
 func (s *WebServer) deleteElement(w http.ResponseWriter, r *http.Request) {
@@ -62,6 +72,17 @@ func (s *WebServer) deleteElement(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal(reqBody, &p)
 
 	s.memory.Delete(p.Key)
+
+	if r.Header.Get("Forward") != "true" {
+		s.forwardRequest(r, reqBody, "/delete")
+	}
+}
+
+func (s *WebServer) kill(w http.ResponseWriter, r *http.Request) {
+	s.serverAlive = false
+	if err := s.Shutdown(context.TODO()); err != nil {
+		panic(err)
+	}
 }
 
 func (s *WebServer) overwriteMemory(w http.ResponseWriter, r *http.Request) {

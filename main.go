@@ -30,8 +30,6 @@ func startServer() {
 	server := webserver.NewWebServer(*idPtr, *addressPtr, *portPtr, addressSet)
 	server.SetLeader(*leaderPtr, *isLeaderPtr)
 	server.StartServer()
-
-
 }
 
 func main() {

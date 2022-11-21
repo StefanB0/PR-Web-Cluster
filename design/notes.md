@@ -19,6 +19,10 @@ Checkpoint 2
     - http endpoint to kill a server (by id)
     - minions periodically ping the leader, if he is dead, they ping the whole network. The server with lowest id becomes the leader.
 - Log every network message
+---
+    ToDo
+- log of communication
+- udp periodic ping to check on the network
 
 Checkpoint 3
 - data integrity synchronisation

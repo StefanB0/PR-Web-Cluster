@@ -8,6 +8,10 @@ import (
 	"net/http"
 )
 
+func (s *WebServer) sendUpdateRequest(list []string) {
+	
+}
+
 func (s *WebServer) overwriteRequest(address string, keys []string, values [][]byte) {
 	jsonData, err := json.Marshal(s.memory)
 	if err != nil {
@@ -31,6 +35,25 @@ func (s *WebServer) overwriteRequest(address string, keys []string, values [][]b
 	if err != nil {
 		log.Printf("overwriteRequest: could not read response body %s\n", err)
 		return
+	}
+}
+
+func (s *WebServer) forwardRequest(r *http.Request, reqBody []byte, endpoint string) {
+	target := randomizeSlice(s.network)
+	l := len(target)
+	for _, address := range target[:(l+1)/2] {
+		forwReq, err := http.NewRequest(r.Method, address+endpoint, bytes.NewBuffer(reqBody))
+		if err != nil {
+			log.Printf("forwardCreateRequest: could not create request%s\n", err)
+			return
+		}
+		forwReq.Header.Add("Forward", "true")
+
+		_, err = http.DefaultClient.Do(forwReq)
+		if err != nil {
+			log.Printf("forwardCreateRequest: error making http request: %s\n", err)
+			return
+		}
 	}
 }
 
