@@ -6,82 +6,87 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"sync"
+	"time"
 )
 
 const (
-	VIRTUAL_PORT     = ":3000"
-	ADDRESS_TEMPLATE = "http:minion"
+	REFRESH = time.Second * 10
 )
 
 type WebServer struct {
-	id      int
-	address string
-	port    string
-
-	isLeader      bool
+	id            int
+	port          string
+	addressSelf   string
 	leaderAddress string
+	network       []string
+	isLeader      bool
+	serverAlive   bool
 
-	cluster Cluster
-	memory  database.DatabaseInstance
-	wg      sync.WaitGroup
-
+	memory database.DatabaseInstance
 	http.Server
-	serverAlive bool
 }
 
-func NewWebServer(_id int, _address string, _port string) *WebServer {
+func NewWebServer(_id int, _address string, _port string, _network []string) *WebServer {
 	return &WebServer{
 		id:          _id,
-		address:     _address,
 		port:        _port,
+		addressSelf: _address,
+		network:     _network,
 		serverAlive: true,
 		memory:      database.NewDatabase(),
 	}
 }
 
 func (s *WebServer) StartServer() {
-	s.initHandlers()
-
-	s.wg.Add(1)
-	go s.initListen()
 
 	if s.isLeader {
-		s.wg.Add(1)
+		s.memory.Create("Example", []byte("12345"))
 		go s.periodicSync()
-	} else {
-		s.clusterSync(s.leaderAddress)
 	}
 
-	s.wg.Wait()
-}
-
-func (s *WebServer) initHandlers() {
-	http.HandleFunc("/", getHello)
-	http.HandleFunc("/create", s.createElement)
-	http.HandleFunc("/read", s.readElement)
-	http.HandleFunc("/update", s.updateElement)
-	http.HandleFunc("/delete", s.deleteElement)
-	http.HandleFunc("/sync", s.overwriteMemory)
-	http.HandleFunc("/contact", s.resolveContact)
+	go s.serverRun()
+	s.initHandlers()
+	s.initListen()
 }
 
 func (s *WebServer) initListen() {
-	defer s.wg.Done()
 	err := http.ListenAndServe(s.port, nil)
+
 	if errors.Is(err, http.ErrServerClosed) {
 		log.Printf("Server closed \n")
 	} else if err != nil {
 		log.Printf("error starting server %s\n", err)
 		os.Exit(1)
 	}
+	s.serverAlive = false
+}
+
+func (s *WebServer) serverRun() {
+	if s.isLeader {
+		s.memory.Create("Hello", []byte("World"))
+		time.Sleep(1)
+	}
+
+	for s.serverAlive {
+		if s.isLeader {
+			s.periodicSync()
+		}
+		log.Printf("%s: internal memory: %+v", s.addressSelf, s.memory)
+		time.Sleep(REFRESH)
+	}
+}
+
+func (s *WebServer) periodicSync() {
+	for _, address := range s.network {
+		if address == s.addressSelf {
+			continue
+		}
+		keys, values := s.memory.GetKeyValuePairs()
+		s.overwriteRequest(address, keys, values)
+	}
 }
 
 func (s *WebServer) SetLeader(address string, _isLeader bool) {
 	s.leaderAddress = address
 	s.isLeader = _isLeader
-}
-
-func (s *WebServer) SetCluster(_cluster Cluster) {
-	s.cluster = _cluster
 }
