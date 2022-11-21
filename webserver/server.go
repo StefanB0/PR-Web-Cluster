@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	REFRESH = time.Second * 10
+	REFRESH = time.Second * 5
 )
 
 type WebServer struct {
@@ -38,12 +38,6 @@ func NewWebServer(_id int, _address string, _port string, _network []string) *We
 }
 
 func (s *WebServer) StartServer() {
-
-	if s.isLeader {
-		s.memory.Create("Example", []byte("12345"))
-		go s.periodicSync()
-	}
-
 	go s.serverRun()
 	s.initHandlers()
 	s.initListen()
