@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	REFRESH   = time.Second * 4
-	HTTP_PORT = ":3000"
-	UDP_PORT  = ":3001"
+	REFRESH       = time.Second * 4
+	HTTP_PORT     = ":3000"
+	UDP_PING_PORT = ":3001"
 )
 
 type WebServer struct {
