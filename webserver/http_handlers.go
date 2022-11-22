@@ -34,10 +34,17 @@ func (s *WebServer) createElement(w http.ResponseWriter, r *http.Request) {
 
 	var p database.Pair
 	json.Unmarshal(reqBody, &p)
+	if s.memory.Read(p.Key) != nil {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
 	s.memory.Create(p.Key, p.Value)
 
 	if r.Header.Get("Forward") != "true" {
-		s.forwardRequest(r, reqBody, "/create")
+		target := randomizeSlice(s.network)
+		target = target[:(len(target)+1)/2]
+		s.ledger[p.Key] = target
+		s.forwardRequest(r, reqBody, target, "/create")
 	}
 }
 
@@ -58,7 +65,7 @@ func (s *WebServer) updateElement(w http.ResponseWriter, r *http.Request) {
 	s.memory.Update(p.Key, p.Value)
 
 	if r.Header.Get("Forward") != "true" {
-		s.forwardRequest(r, reqBody, "/update")
+		s.forwardRequest(r, reqBody, s.ledger[p.Key], "/update")
 	}
 }
 
@@ -74,7 +81,8 @@ func (s *WebServer) deleteElement(w http.ResponseWriter, r *http.Request) {
 	s.memory.Delete(p.Key)
 
 	if r.Header.Get("Forward") != "true" {
-		s.forwardRequest(r, reqBody, "/delete")
+		s.forwardRequest(r, reqBody, s.ledger[p.Key], "/delete")
+		delete(s.ledger, p.Key)
 	}
 }
 

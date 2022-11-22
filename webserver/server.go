@@ -4,13 +4,16 @@ import (
 	"PR/Web_Cluster/database"
 	"errors"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"time"
 )
 
 const (
-	REFRESH = time.Second * 4
+	REFRESH   = time.Second * 4
+	HTTP_PORT = ":3000"
+	UDP_PORT  = ":3001"
 )
 
 type WebServer struct {
@@ -21,8 +24,10 @@ type WebServer struct {
 	network       []string
 	isLeader      bool
 	serverAlive   bool
+	ledger        map[string][]string
 
-	memory database.DatabaseInstance
+	udpServer net.PacketConn
+	memory    database.DatabaseInstance
 	http.Server
 }
 
@@ -40,6 +45,7 @@ func NewWebServer(_id int, _address string, _port string, _network []string) *We
 func (s *WebServer) StartServer() {
 	s.network = pruneSlice(s.network, s.addressSelf)
 	go s.serverRun()
+	go s.udpListen()
 	s.initHandlers()
 	s.initListen()
 }
@@ -57,18 +63,12 @@ func (s *WebServer) initListen() {
 }
 
 func (s *WebServer) serverRun() {
-	// if s.isLeader {
-	// 	s.memory.Create("Hello", []byte("World"))
-	// 	time.Sleep(1)
-	// }
-
 	for s.serverAlive {
-		// if s.isLeader {
-		// 	s.periodicSync()
-		// }
 		log.Printf("%s: internal memory: %+v", s.addressSelf, s.memory)
 		time.Sleep(REFRESH)
 	}
+
+	s.udpServer.Close()
 }
 
 func (s *WebServer) periodicSync() {

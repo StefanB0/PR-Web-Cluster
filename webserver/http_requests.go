@@ -38,10 +38,8 @@ func (s *WebServer) overwriteRequest(address string, keys []string, values [][]b
 	}
 }
 
-func (s *WebServer) forwardRequest(r *http.Request, reqBody []byte, endpoint string) {
-	target := randomizeSlice(s.network)
-	l := len(target)
-	for _, address := range target[:(l+1)/2] {
+func (s *WebServer) forwardRequest(r *http.Request, reqBody []byte, target []string,endpoint string) {
+	for _, address := range target {
 		forwReq, err := http.NewRequest(r.Method, address+endpoint, bytes.NewBuffer(reqBody))
 		if err != nil {
 			log.Printf("forwardCreateRequest: could not create request%s\n", err)
