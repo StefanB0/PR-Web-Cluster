@@ -18,13 +18,15 @@ func (s *WebServer) udpListen() {
 		if err != nil {
 			continue
 		}
-		reaponseStr := "alive"
+		reaponseStr := UDP_OK
 		udpServer.WriteTo([]byte(reaponseStr), addr)
+		log.Println("UDP internal communication. Ping")
 	}
 }
 
-func (s *WebServer) udping(addr string) {
-	udpServer, err := net.ResolveUDPAddr("udp", addr)
+func udping(addr string) (status string){
+	status = UDP_DEAD
+	udpServer, err := net.ResolveUDPAddr("udp", addr + UDP_PING_PORT)
 	if err != nil {
 		log.Printf("ResolveUDPAddress failed: %s", err.Error())
 		return
@@ -43,7 +45,10 @@ func (s *WebServer) udping(addr string) {
 	received := make([]byte, 1024)
 	_, err = conn.Read(received)
 	if err != nil {
-		log
+		log.Printf("Read data failed: %s", err.Error())
+		return
 	}
 
+	status = string(received)
+	return status
 }

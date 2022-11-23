@@ -17,13 +17,13 @@ var (
 
 func readConfig() {
 	idPtr = flag.Int("id", 0, "server id")
-	addressPtr = flag.String("address", "http://minion", "server address")
+	addressPtr = flag.String("address", "minion1", "server address")
 	portPtr = flag.String("port", ":3000", "chooses one of the predifined ports")
-	leaderPtr = flag.String("leader", "http://leader0:3000", "cluster leader address")
+	leaderPtr = flag.String("leader", "leader0", "cluster leader address")
 	isLeaderPtr = flag.Bool("isLeader", false, "defines if server is cluster leader at creation")
 	flag.Parse()
 
-	addressSet = []string{"http://leader0:3000", "http://minion1:3000", "http://minion2:3000"}
+	addressSet = []string{"leader0", "minion1", "minion2"}
 }
 
 func startServer() {

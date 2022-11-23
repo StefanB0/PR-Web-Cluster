@@ -25,4 +25,4 @@ RUN go build -o /docker-web-cluster
 
 EXPOSE 3000
 
-CMD [ "/docker-web-cluster", "-id:0", "-address=http:minion0:3000", "-port=:3000", "-leader=http:leader0:3000", "-isLeader=false" ]
+CMD [ "/docker-web-cluster", "-id:0", "-address=minion0", "-port=:3000", "-leader=leader0", "-isLeader=false" ]

@@ -2,18 +2,20 @@ package webserver
 
 import (
 	"PR/Web_Cluster/database"
-	"errors"
-	"log"
 	"net"
 	"net/http"
-	"os"
 	"time"
 )
 
 const (
-	REFRESH       = time.Second * 4
+	REFRESH = time.Second * 4
+
+	HTTP_PREFIX   = "http://"
 	HTTP_PORT     = ":3000"
 	UDP_PING_PORT = ":3001"
+
+	UDP_OK   = "OK"
+	UDP_DEAD = "DEAD"
 )
 
 type WebServer struct {
@@ -38,47 +40,28 @@ func NewWebServer(_id int, _address string, _port string, _network []string) *We
 		addressSelf: _address,
 		network:     _network,
 		serverAlive: true,
+		ledger:      make(map[string][]string),
 		memory:      database.NewDatabase(),
 	}
 }
 
 func (s *WebServer) StartServer() {
 	s.network = pruneSlice(s.network, s.addressSelf)
-	go s.serverRun()
 	go s.udpListen()
 	s.initHandlers()
-	s.initListen()
-}
-
-func (s *WebServer) initListen() {
-	err := http.ListenAndServe(s.port, nil)
-
-	if errors.Is(err, http.ErrServerClosed) {
-		log.Printf("Server closed \n")
-	} else if err != nil {
-		log.Printf("error starting server %s\n", err)
-		os.Exit(1)
-	}
-	s.serverAlive = false
+	go s.initListen()
+	s.serverRun()
 }
 
 func (s *WebServer) serverRun() {
+
 	for s.serverAlive {
-		log.Printf("%s: internal memory: %+v", s.addressSelf, s.memory)
+		if s.isLeader {
+			s.checkNetwork()
+		}
+		// log.Printf("%s: internal memory: %+v", s.addressSelf, s.memory)
 		time.Sleep(REFRESH)
 	}
 
 	s.udpServer.Close()
-}
-
-func (s *WebServer) periodicSync() {
-	for _, address := range s.network {
-		keys, values := s.memory.GetKeyValuePairs()
-		s.overwriteRequest(address, keys, values)
-	}
-}
-
-func (s *WebServer) SetLeader(address string, _isLeader bool) {
-	s.leaderAddress = address
-	s.isLeader = _isLeader
 }
