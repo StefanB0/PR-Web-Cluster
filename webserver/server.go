@@ -2,15 +2,20 @@ package webserver
 
 import (
 	"PR/Web_Cluster/database"
-	"errors"
-	"log"
+	"net"
 	"net/http"
-	"os"
 	"time"
 )
 
 const (
-	REFRESH = time.Second * 5
+	REFRESH = time.Second * 4
+
+	HTTP_PREFIX   = "http://"
+	HTTP_PORT     = ":3000"
+	UDP_PING_PORT = ":3001"
+
+	UDP_OK   = "OK"
+	UDP_DEAD = "DEAD"
 )
 
 type WebServer struct {
@@ -21,8 +26,10 @@ type WebServer struct {
 	network       []string
 	isLeader      bool
 	serverAlive   bool
+	ledger        map[string][]string
 
-	memory database.DatabaseInstance
+	udpServer net.PacketConn
+	memory    database.DatabaseInstance
 	http.Server
 }
 
@@ -33,54 +40,28 @@ func NewWebServer(_id int, _address string, _port string, _network []string) *We
 		addressSelf: _address,
 		network:     _network,
 		serverAlive: true,
+		ledger:      make(map[string][]string),
 		memory:      database.NewDatabase(),
 	}
 }
 
 func (s *WebServer) StartServer() {
-	go s.serverRun()
+	s.network = pruneSlice(s.network, s.addressSelf)
+	go s.udpListen()
 	s.initHandlers()
-	s.initListen()
-}
-
-func (s *WebServer) initListen() {
-	err := http.ListenAndServe(s.port, nil)
-
-	if errors.Is(err, http.ErrServerClosed) {
-		log.Printf("Server closed \n")
-	} else if err != nil {
-		log.Printf("error starting server %s\n", err)
-		os.Exit(1)
-	}
-	s.serverAlive = false
+	go s.initListen()
+	s.serverRun()
 }
 
 func (s *WebServer) serverRun() {
-	if s.isLeader {
-		s.memory.Create("Hello", []byte("World"))
-		time.Sleep(1)
-	}
 
 	for s.serverAlive {
 		if s.isLeader {
-			s.periodicSync()
+			s.checkNetwork()
 		}
-		log.Printf("%s: internal memory: %+v", s.addressSelf, s.memory)
+		// log.Printf("%s: internal memory: %+v", s.addressSelf, s.memory)
 		time.Sleep(REFRESH)
 	}
-}
 
-func (s *WebServer) periodicSync() {
-	for _, address := range s.network {
-		if address == s.addressSelf {
-			continue
-		}
-		keys, values := s.memory.GetKeyValuePairs()
-		s.overwriteRequest(address, keys, values)
-	}
-}
-
-func (s *WebServer) SetLeader(address string, _isLeader bool) {
-	s.leaderAddress = address
-	s.isLeader = _isLeader
+	s.udpServer.Close()
 }

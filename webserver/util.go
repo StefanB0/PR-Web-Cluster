@@ -1,6 +1,7 @@
 package webserver
 
 import (
+	"log"
 	"math/rand"
 	"time"
 )
@@ -23,4 +24,15 @@ func pruneSlice(s []string, item string) []string {
 		}
 	}
 	return newS
+}
+
+func printRequest(addr, protocol, method, fcheck string) {
+	netw := "internal"
+	if fcheck == "true" {
+		netw = "external"
+	}
+	
+	if protocol == "HTTP" {
+		log.Printf("Server %s, %s %s request , Type: %s", addr, netw, protocol, method)
+	}
 }

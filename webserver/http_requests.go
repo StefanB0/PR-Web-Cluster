@@ -9,13 +9,14 @@ import (
 )
 
 func (s *WebServer) overwriteRequest(address string, keys []string, values [][]byte) {
+	addr := HTTP_PREFIX + address + HTTP_PORT
 	jsonData, err := json.Marshal(s.memory)
 	if err != nil {
 		log.Printf("overwriteRequest: could not marshal memory data%s\n", err)
 		return
 	}
 
-	req, err := http.NewRequest(http.MethodPost, address+"/overwrite", bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest(http.MethodPost, addr+"/overwrite", bytes.NewBuffer(jsonData))
 	if err != nil {
 		log.Printf("overwriteRequest: could not create request%s\n", err)
 		return
@@ -34,8 +35,27 @@ func (s *WebServer) overwriteRequest(address string, keys []string, values [][]b
 	}
 }
 
+func (s *WebServer) forwardRequest(r *http.Request, reqBody []byte, target []string, endpoint string) {
+	for _, address := range target {
+		addr := HTTP_PREFIX + address + HTTP_PORT
+		forwReq, err := http.NewRequest(r.Method, addr+endpoint, bytes.NewBuffer(reqBody))
+		if err != nil {
+			log.Printf("forwardCreateRequest: could not create request%s\n", err)
+			return
+		}
+		forwReq.Header.Add("Forward", "true")
+
+		_, err = http.DefaultClient.Do(forwReq)
+		if err != nil {
+			log.Printf("forwardCreateRequest: error making http request: %s\n", err)
+			return
+		}
+	}
+}
+
 func handshakeRequest(address, message string) {
-	req, err := http.NewRequest(http.MethodGet, address+"/handshake", nil)
+	addr := HTTP_PREFIX + address + HTTP_PORT
+	req, err := http.NewRequest(http.MethodGet, addr+"/handshake", nil)
 	if err != nil {
 		log.Printf("handshake: could not create request%s\n", err)
 		return
