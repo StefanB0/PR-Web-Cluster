@@ -3,7 +3,6 @@ echo "Cluster testing script"
 sleep 1
 
 # Create a bunch of data
-echo "Creating Data"
 curl http://localhost:8081/create -X POST -H "Content-Type: application/json" -d '{"key":"Hello", "value": [119, 111, 114, 108, 100]}' # 1 world
 curl http://localhost:8081/create -X POST -H "Content-Type: application/json" -d '{"key":"Data1", "value": [72, 111, 117, 115, 101]}' # 2 House
 curl http://localhost:8081/create -X POST -H "Content-Type: application/json" -d '{"key":"Animal", "value": [67, 111, 119]}' # 3 Cow
@@ -17,14 +16,12 @@ curl http://localhost:8081/create -X POST -H "Content-Type: application/json" -d
 #sleep 3
 
 # Update some data
-echo "Updating Data"
 curl http://localhost:8081/update -X PUT -H "Content-Type: application/json" -d '{"key":"Animal", "value": [72, 111, 114, 115, 101]}'      # 1 Horse
 curl http://localhost:8081/update -X PUT -H "Content-Type: application/json" -d '{"key":"Science", "value": [68, 97, 114, 119, 105, 110]}' # 2 Darwin
 curl http://localhost:8081/update -X PUT -H "Content-Type: application/json" -d '{"key":"University", "value": [85, 83, 77]}'              # 3 USM
 #sleep 3
 
 # Delete some data
-echo "Deleting Data"
 curl http://localhost:8081/delete -X DELETE -H "Key: Data1" # 1
 curl http://localhost:8081/delete -X DELETE -H "Key: Data3" # 2
 curl http://localhost:8081/delete -X DELETE -H "Key: Data4" # 3
@@ -33,10 +30,10 @@ curl http://localhost:8081/delete -X DELETE -H "Key: Data4" # 3
 # Kill a server
 echo "Kill Server"
 curl http://localhost:8083/kill
-#sleep 3
+sleep 1
 
 # Get a bunch of data
-printf "Fetch data\n"
+printf "Fetch data:"
 curl http://localhost:8081/read -H "Key: Hello" && printf "\n"      # 1
 curl http://localhost:8081/read -H "Key: Animal" && printf "\n"     # 2
 curl http://localhost:8081/read -H "Key: Science" && printf "\n"    # 3

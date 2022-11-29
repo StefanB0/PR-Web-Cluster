@@ -18,6 +18,22 @@ func (s *WebServer) checkNetwork() {
 	}
 }
 
+func (s *WebServer) checkLeader() {
+	for {
+		status := udping(s.leaderAddress)
+		if status == UDP_OK {
+			continue
+		} else if status == UDP_DEAD {
+			s.pruneDeadServer(s.leaderAddress)
+			s.chooseLeader()
+		}
+	}
+}
+
+func (s *WebServer) chooseLeader() {
+
+}
+
 func (s *WebServer) pruneDeadServer(addr string) {
 	log.Println("Server died:", addr)
 	s.network = pruneSlice(s.network, addr)

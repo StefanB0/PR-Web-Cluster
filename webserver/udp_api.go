@@ -39,7 +39,8 @@ func udping(addr string) (status string){
 	}
 	defer conn.Close()
 
-	_, err = conn.Write([]byte("Ping"))
+	conn.Write([]byte("Ping"))
+	
 	
 	//data buffer
 	received := make([]byte, 1024)
