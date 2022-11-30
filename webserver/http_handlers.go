@@ -41,7 +41,7 @@ func getHello(w http.ResponseWriter, h *http.Request) {
 
 func (s *WebServer) createElement(w http.ResponseWriter, r *http.Request) {
 	printRequest(s.addressSelf, "HTTP", r.Method, r.Header.Get("Forward"))
-	
+
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("Server could not read request body: %s\n", err)
@@ -66,17 +66,26 @@ func (s *WebServer) createElement(w http.ResponseWriter, r *http.Request) {
 
 func (s *WebServer) readElement(w http.ResponseWriter, r *http.Request) {
 	printRequest(s.addressSelf, "HTTP", r.Method, r.Header.Get("Forward"))
-	
+
 	key := r.Header.Get("Key")
 	if s.memory.Read(key) == nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 
-	if r.Header.Get("Forward") != "true" {
-		s.forwardRequest(r, nil, s.ledger[key], "/delete")
-		delete(s.ledger, key)
-	}
+	// if r.Header.Get("Forward") != "true" {
+	// 	s.forwardRequest(r, nil, s.ledger[key], "/delete")
+	// }
+
+	// if s.isLeader {
+	// 	serverUrl, _ := url.Parse(HTTP_PREFIX + s.ledger[key][0]) // http://localhost:8081
+	// 	// serverUrl, _ := url.Parse("http://localhost:8082")
+	// 	rp := httputil.NewSingleHostReverseProxy(serverUrl)
+
+	// 	rp.ServeHTTP(w, r)
+	// 	return
+	// }
+
 	w.Write(s.memory.Read(key))
 }
 
@@ -104,7 +113,7 @@ func (s *WebServer) updateElement(w http.ResponseWriter, r *http.Request) {
 
 func (s *WebServer) deleteElement(w http.ResponseWriter, r *http.Request) {
 	printRequest(s.addressSelf, "HTTP", r.Method, r.Header.Get("Forward"))
-	
+
 	key := r.Header.Get("Key")
 	if s.memory.Read(key) == nil {
 		w.WriteHeader(http.StatusNotFound)
@@ -130,7 +139,7 @@ func (s *WebServer) kill(w http.ResponseWriter, r *http.Request) {
 
 func (s *WebServer) overwriteMemory(w http.ResponseWriter, r *http.Request) {
 	printRequest(s.addressSelf, "HTTP", r.Method, r.Header.Get("Forward"))
-	
+
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("Server could not read request body: %s\n", err)

@@ -4,15 +4,17 @@ import (
 	"PR/Web_Cluster/database"
 	"net"
 	"net/http"
+	"net/http/httputil"
 	"time"
 )
 
 const (
-	REFRESH = time.Second * 4
+	REFRESH = time.Second * 10
 
 	HTTP_PREFIX   = "http://"
 	HTTP_PORT     = ":3000"
 	UDP_PING_PORT = ":3001"
+	TCP_ID_PORT   = ":3002"
 
 	UDP_OK   = "OK"
 	UDP_DEAD = "DEAD"
@@ -28,9 +30,15 @@ type WebServer struct {
 	serverAlive   bool
 	ledger        map[string][]string
 
-	udpServer net.PacketConn
-	memory    database.DatabaseInstance
+	udpServer    net.PacketConn
+	memory       database.DatabaseInstance
+	proxy *httputil.ReverseProxy
 	http.Server
+}
+
+type ProxyServer struct {
+	addr  string
+	proxy *httputil.ReverseProxy
 }
 
 func NewWebServer(_id int, _address string, _port string, _network []string) *WebServer {
@@ -50,11 +58,12 @@ func (s *WebServer) StartServer() {
 	go s.udpListen()
 	s.initHandlers()
 	go s.initListen()
+	go s.listenTCP()
 	s.serverRun()
 }
 
 func (s *WebServer) serverRun() {
-
+	go s.checkLeader()
 	for s.serverAlive {
 		if s.isLeader {
 			s.checkNetwork()

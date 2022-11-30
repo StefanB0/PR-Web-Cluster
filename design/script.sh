@@ -28,9 +28,9 @@ curl http://localhost:8081/delete -X DELETE -H "Key: Data4" # 3
 #sleep 3
 
 # Kill a server
-echo "Kill Server"
-curl http://localhost:8083/kill
-sleep 1
+# echo "Kill Server"
+# curl http://localhost:8083/kill
+# sleep 1
 
 # Get a bunch of data
 printf "Fetch data:"

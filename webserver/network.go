@@ -1,6 +1,9 @@
 package webserver
 
-import "log"
+import (
+	"log"
+	"time"
+)
 
 type ServerRefference struct {
 	id      int
@@ -19,19 +22,37 @@ func (s *WebServer) checkNetwork() {
 }
 
 func (s *WebServer) checkLeader() {
-	for {
+	for s.serverAlive {
+		time.Sleep(REFRESH)
+		if (s.isLeader) {
+			continue
+		}
+
 		status := udping(s.leaderAddress)
 		if status == UDP_OK {
 			continue
 		} else if status == UDP_DEAD {
+			log.Println("Partition leader died")
 			s.pruneDeadServer(s.leaderAddress)
 			s.chooseLeader()
+			log.Printf("New partition leader: %s\n", s.leaderAddress)
 		}
 	}
 }
 
 func (s *WebServer) chooseLeader() {
-
+	leaderAddress := s.addressSelf
+	leaderID := s.id
+	for _, candidateAddress := range s.network {
+		candidateID := s.idRequest(candidateAddress)
+		if candidateID < leaderID {
+			leaderAddress = candidateAddress
+			leaderID = candidateID
+		}
+	}
+	_isLeader := (s.id ==  leaderID)
+	s.SetLeader(leaderAddress, _isLeader)
+	
 }
 
 func (s *WebServer) pruneDeadServer(addr string) {
