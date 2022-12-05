@@ -7,11 +7,11 @@ import (
 	"errors"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"os"
-	"time"
 )
 
 func (s *WebServer) initHandlers() {
@@ -25,6 +25,14 @@ func (s *WebServer) initHandlers() {
 	http.HandleFunc("/kill", s.kill)
 	http.HandleFunc("/overwrite", s.overwriteMemory)
 	http.HandleFunc("/handshake", s.handshake)
+}
+
+func (s *WebServer) initProxy() {
+	s.proxylist = make(map[string]*httputil.ReverseProxy)
+	for _, addr := range s.network {
+		rUrl, _ := url.Parse(HTTP_PREFIX + addr + ":3000")
+		s.proxylist[addr] = httputil.NewSingleHostReverseProxy(rUrl)
+	}
 }
 
 func (s *WebServer) initListen() {
@@ -77,14 +85,14 @@ func (s *WebServer) readElement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if s.isLeader && len(s.ledger[key]) > 0 {
-		serverUrl, _ := url.Parse(HTTP_PREFIX + s.ledger[key][0] + ":3000") // http://localhost:8081
-		rp := httputil.NewSingleHostReverseProxy(serverUrl)
-		rp.ServeHTTP(w, r)
+	if s.isLeader && r.Header.Get("Forward") != "true" && len(s.ledger[key]) > 0 {
+		randProxy := rand.Intn(len(s.ledger[key]))
+		proxy := s.proxylist[s.ledger[key][randProxy]]
+		r.Header.Add("Forward", "true")
+		proxy.ServeHTTP(w, r)
 	} else {
 		w.Write(s.memory.Read(key))
 	}
-	time.Sleep(5)
 }
 
 func (s *WebServer) updateElement(w http.ResponseWriter, r *http.Request) {

@@ -62,6 +62,7 @@ func (s *WebServer) StartServer() {
 	s.network = pruneSlice(s.network, s.addressSelf)
 	go s.udpListen()
 	s.initHandlers()
+	s.initProxy()
 	go s.initListen()
 	go s.listenTCP()
 	s.serverRun()

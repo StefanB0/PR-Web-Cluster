@@ -57,6 +57,8 @@ func (s *WebServer) chooseLeader() {
 		for key, addressSet := range s.ledger {
 			if !checkSlice(addressSet, s.addressSelf) {
 				s.memory.Create(key, s.getValue(addressSet[0], key))
+			} else {
+				s.ledger[key] = pruneSlice(s.ledger[key], s.addressSelf)
 			}
 		}
 	}
