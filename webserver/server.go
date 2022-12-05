@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	REFRESH = time.Second * 10
+	REFRESH = time.Second * 3
 
 	HTTP_PREFIX   = "http://"
 	HTTP_PORT     = ":3000"
@@ -30,10 +30,15 @@ type WebServer struct {
 	serverAlive   bool
 	ledger        map[string][]string
 
-	udpServer    net.PacketConn
-	memory       database.DatabaseInstance
-	proxy *httputil.ReverseProxy
+	udpServer net.PacketConn
+	memory    database.DatabaseInstance
+	proxy     *httputil.ReverseProxy
 	http.Server
+}
+
+type Snapshot struct {
+	Memory database.DatabaseInstance `json:"memory"`
+	Ledger map[string][]string       `json:"ledger"`
 }
 
 type ProxyServer struct {
@@ -65,12 +70,15 @@ func (s *WebServer) StartServer() {
 func (s *WebServer) serverRun() {
 	go s.checkLeader()
 	for s.serverAlive {
+		time.Sleep(REFRESH)
 		if s.isLeader {
 			s.checkNetwork()
 		}
-		// log.Printf("%s: internal memory: %+v", s.addressSelf, s.memory)
-		time.Sleep(REFRESH)
-	}
 
+		if !s.isLeader {
+			s.sendSyncRequest()
+		}
+		// log.Printf("%s: internal memory: %+v", s.addressSelf, s.memory)
+	}
 	s.udpServer.Close()
 }

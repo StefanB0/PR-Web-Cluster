@@ -24,7 +24,7 @@ func (s *WebServer) checkNetwork() {
 func (s *WebServer) checkLeader() {
 	for s.serverAlive {
 		time.Sleep(REFRESH)
-		if (s.isLeader) {
+		if s.isLeader {
 			continue
 		}
 
@@ -50,9 +50,16 @@ func (s *WebServer) chooseLeader() {
 			leaderID = candidateID
 		}
 	}
-	_isLeader := (s.id ==  leaderID)
+	_isLeader := (s.id == leaderID)
 	s.SetLeader(leaderAddress, _isLeader)
-	
+
+	if s.isLeader {
+		for key, addressSet := range s.ledger {
+			if !checkSlice(addressSet, s.addressSelf) {
+				s.memory.Create(key, s.getValue(addressSet[0], key))
+			}
+		}
+	}
 }
 
 func (s *WebServer) pruneDeadServer(addr string) {

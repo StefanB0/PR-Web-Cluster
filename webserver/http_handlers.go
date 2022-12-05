@@ -17,6 +17,7 @@ func (s *WebServer) initHandlers() {
 	http.HandleFunc("/create", s.createElement)
 	http.HandleFunc("/read", s.readElement)
 	http.HandleFunc("/update", s.updateElement)
+	http.HandleFunc("/syncRequest", s.syncRequestHandler)
 	http.HandleFunc("/delete", s.deleteElement)
 	http.HandleFunc("/kill", s.kill)
 	http.HandleFunc("/overwrite", s.overwriteMemory)
@@ -109,6 +110,26 @@ func (s *WebServer) updateElement(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Forward") != "true" {
 		s.forwardRequest(r, reqBody, s.ledger[p.Key], "/update")
 	}
+}
+
+func (s *WebServer) syncRequestHandler(w http.ResponseWriter, r *http.Request) {
+	server_name := r.Header.Get("server_name")
+	snapshot := &Snapshot{database.NewDatabase(), s.ledger}
+
+	for key, serverSet := range s.ledger {
+		if checkSlice(serverSet, server_name) {
+			snapshot.Memory.Create(key, s.memory.Read(key))
+		}
+	}
+
+	// log.Printf("input snapshot %+v", *snapshot)
+	jsondata, err := json.Marshal(*snapshot)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	// log.Printf("%+v", jsondata)
+	w.Write(jsondata)
 }
 
 func (s *WebServer) deleteElement(w http.ResponseWriter, r *http.Request) {

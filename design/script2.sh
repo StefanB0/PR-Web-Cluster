@@ -28,16 +28,17 @@ curl http://localhost:8081/delete -X DELETE -H "Key: Data4" # 3
 #sleep 3
 
 # Kill a server
+sleep 3
 echo "Kill Server"
-curl http://localhost:8083/kill
-sleep 1
+curl http://localhost:8081/kill
+sleep 5
 
-# Get a bunch of data
-printf "Fetch data:"
-curl http://localhost:8081/read -H "Key: Hello" && printf "\n"      # 1
-curl http://localhost:8081/read -H "Key: Animal" && printf "\n"     # 2
-curl http://localhost:8081/read -H "Key: Science" && printf "\n"    # 3
-curl http://localhost:8081/read -H "Key: University" && printf "\n" # 4
-curl http://localhost:8081/read -H "Key: Data5" && printf "\n"      # 5
-curl http://localhost:8081/read -H "Key: Data6" && printf "\n"      # 6
-curl http://localhost:8081/read -H "Key: Data9" && printf "\n"      # 7
+# # Get a bunch of data
+echo "Fetch data:"
+curl http://localhost:8082/read -H "Key: Hello" && printf "\n"      # 1
+curl http://localhost:8082/read -H "Key: Animal" && printf "\n"     # 2
+curl http://localhost:8082/read -H "Key: Science" && printf "\n"    # 3
+curl http://localhost:8082/read -H "Key: University" && printf "\n" # 4
+curl http://localhost:8082/read -H "Key: Data5" && printf "\n"      # 5
+curl http://localhost:8082/read -H "Key: Data6" && printf "\n"      # 6
+curl http://localhost:8082/read -H "Key: Data9" && printf "\n"      # 7

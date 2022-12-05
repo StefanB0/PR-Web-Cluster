@@ -26,6 +26,16 @@ func pruneSlice(s []string, item string) []string {
 	return newS
 }
 
+func checkSlice (s []string, value string) bool {
+	for _, v := range s {
+		if v == value {
+			return true
+		}
+	}
+
+	return false
+}
+
 func printRequest(addr, protocol, method, fcheck string) {
 	netw := "internal"
 	if fcheck == "true" {
