@@ -8,7 +8,10 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
+	"time"
 )
 
 func (s *WebServer) initHandlers() {
@@ -74,20 +77,14 @@ func (s *WebServer) readElement(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// if r.Header.Get("Forward") != "true" {
-	// 	s.forwardRequest(r, nil, s.ledger[key], "/delete")
-	// }
-
-	// if s.isLeader {
-	// 	serverUrl, _ := url.Parse(HTTP_PREFIX + s.ledger[key][0]) // http://localhost:8081
-	// 	// serverUrl, _ := url.Parse("http://localhost:8082")
-	// 	rp := httputil.NewSingleHostReverseProxy(serverUrl)
-
-	// 	rp.ServeHTTP(w, r)
-	// 	return
-	// }
-
-	w.Write(s.memory.Read(key))
+	if s.isLeader && len(s.ledger[key]) > 0 {
+		serverUrl, _ := url.Parse(HTTP_PREFIX + s.ledger[key][0] + ":3000") // http://localhost:8081
+		rp := httputil.NewSingleHostReverseProxy(serverUrl)
+		rp.ServeHTTP(w, r)
+	} else {
+		w.Write(s.memory.Read(key))
+	}
+	time.Sleep(5)
 }
 
 func (s *WebServer) updateElement(w http.ResponseWriter, r *http.Request) {
@@ -122,13 +119,11 @@ func (s *WebServer) syncRequestHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// log.Printf("input snapshot %+v", *snapshot)
 	jsondata, err := json.Marshal(*snapshot)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	// log.Printf("%+v", jsondata)
 	w.Write(jsondata)
 }
 

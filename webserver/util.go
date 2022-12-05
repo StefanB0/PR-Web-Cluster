@@ -38,7 +38,7 @@ func checkSlice (s []string, value string) bool {
 
 func printRequest(addr, protocol, method, fcheck string) {
 	netw := "internal"
-	if fcheck == "true" {
+	if fcheck != "true" {
 		netw = "external"
 	}
 	

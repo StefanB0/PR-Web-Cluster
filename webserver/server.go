@@ -29,10 +29,10 @@ type WebServer struct {
 	isLeader      bool
 	serverAlive   bool
 	ledger        map[string][]string
+	proxylist map[string]*httputil.ReverseProxy
 
 	udpServer net.PacketConn
 	memory    database.DatabaseInstance
-	proxy     *httputil.ReverseProxy
 	http.Server
 }
 
