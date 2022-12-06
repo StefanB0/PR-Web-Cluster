@@ -11,6 +11,7 @@ var (
 	addressPtr  *string
 	leaderPtr   *string
 	isLeaderPtr *bool
+	isServerPtr *bool
 
 	addressSet []string
 )
@@ -34,5 +35,9 @@ func startServer() {
 
 func main() {
 	readConfig()
-	startServer()
+	if *isServerPtr {
+		startServer()
+	} else {
+		
+	}
 }
